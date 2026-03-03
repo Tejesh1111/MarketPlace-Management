@@ -1,5 +1,7 @@
 package com.example.Backend.service;
 
+import com.example.Backend.exception.*;
+
 import com.example.Backend.entity.Category;
 import com.example.Backend.repository.CategoryRepository;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,11 @@ public class CategoryService {
     }
 
     public Category createCategory(Category category) {
+
+        if (categoryRepository.findByName(category.getName()).isPresent()) {
+            throw new DuplicateResourceException("Category already exists");
+        }
+
         return categoryRepository.save(category);
     }
 

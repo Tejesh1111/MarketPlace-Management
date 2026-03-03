@@ -1,12 +1,15 @@
 package com.example.Backend.service;
 
-import com.example.Backend.entity.Category;
-import com.example.Backend.entity.Product;
-import com.example.Backend.repository.CategoryRepository;
-import com.example.Backend.repository.ProductRepository;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.example.Backend.dto.ProductDTO;
+import com.example.Backend.entity.Category;
+import com.example.Backend.entity.Product;
+import com.example.Backend.exception.ResourceNotFoundException;
+import com.example.Backend.repository.CategoryRepository;
+import com.example.Backend.repository.ProductRepository;
 
 @Service
 public class ProductService {
@@ -20,30 +23,43 @@ public class ProductService {
         this.categoryRepository = categoryRepository;
     }
 
-    public Product createProduct(Product product, Long categoryId) {
+    public ProductDTO createProduct(Product product, Long categoryId) {
 
         Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         product.setCategory(category);
 
-        return productRepository.save(product);
+        Product saved = productRepository.save(product);
+
+        return mapToDTO(saved);
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public List<ProductDTO> getAllProducts() {
+        return productRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
-    public List<Product> getProductsByCategory(Long categoryId) {
-        return productRepository.findByCategoryId(categoryId);
+    public ProductDTO getProductById(Long id) {
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+        return mapToDTO(product);
     }
 
-    public Product getProductById(Long id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-    }
+    private ProductDTO mapToDTO(Product product) {
 
-    public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+        return new ProductDTO(
+                product.getId(),
+                product.getName(),
+                product.getDescription(),
+                product.getPrice(),
+                product.getStock(),
+                product.getCategory().getId(),
+                product.getCategory().getName()
+        );
     }
 }
